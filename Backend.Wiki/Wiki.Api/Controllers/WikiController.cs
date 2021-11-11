@@ -1,6 +1,8 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Wiki.Application.Data.Queries.GetData;
@@ -12,11 +14,13 @@ namespace Wiki.Api.Controllers
     {
         private readonly IConfiguration configuration;
         private readonly IMediator mediator;
+        private readonly ILogger<WikiController> logger;
 
-        public WikiController(IConfiguration configuration, IMediator mediator)
+        public WikiController(IConfiguration configuration, IMediator mediator, ILogger<WikiController> logger)
         {
             this.configuration = configuration;
             this.mediator = mediator;
+            this.logger = logger;
         }
 
         public IActionResult Index()
@@ -28,12 +32,22 @@ namespace Wiki.Api.Controllers
         [Route("GetData")]
         public async Task<ActionResult<IEnumerable<WikiResponse>>> GetData()
         {
-            var result = await mediator.Send(new WikiRequest()
+            IEnumerable<WikiResponse> result = new List<WikiResponse>();
+
+            try
             {
-                lastHours = configuration.GetValue<int>("Settings:lastHours"),
-                directoryPath = configuration.GetValue<string>("Settings:DirectoryPath"),
-                compressedFilePath = configuration.GetValue<string>("Settings:CompressedFilePath")
-            });
+                result = await mediator.Send(new WikiRequest()
+                {
+                    lastHours = configuration.GetValue<int>("Settings:lastHours"),
+                    directoryPath = configuration.GetValue<string>("Settings:DirectoryPath"),
+                    compressedFilePath = configuration.GetValue<string>("Settings:CompressedFilePath")
+                });
+                logger.LogInformation($"Success {DateTime.UtcNow.ToLongTimeString()}");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex.Message);
+            }
             return Ok(result);
         }
     }
