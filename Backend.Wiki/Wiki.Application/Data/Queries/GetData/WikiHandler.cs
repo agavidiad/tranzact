@@ -15,11 +15,13 @@ namespace Wiki.Application.Data.Queries.GetData
         public async Task<IEnumerable<WikiResponse>> Handle(WikiRequest request, CancellationToken cancellationToken)
         {
 
-            IEnumerable<WikiResponse> fileContents = new List<WikiResponse>();
+            IEnumerable<WikiResponse> result = new List<WikiResponse>();
 
-            fileContents = await GetData(Shared.Files.Functions.GetFileContent(request.compressedFilePath, request.directoryPath));
+            var fileContents = await GetData(Shared.Files.Functions.GetFileContent(request.compressedFilePath, request.directoryPath));
 
-            var result = from fc in fileContents
+            if (fileContents.Count() > 0)
+            {
+                result = (from fc in fileContents
                          group fc by new
                          {
                              fc.DOMAIN_CODE,
@@ -30,9 +32,9 @@ namespace Wiki.Application.Data.Queries.GetData
                              DOMAIN_CODE = g.First().DOMAIN_CODE,
                              PAGE_TITLE = g.First().PAGE_TITLE,
                              CNT = g.Sum(pc => pc.CNT),
-                         };
-
-            return result.OrderByDescending(f => f.CNT).Take(100);
+                         }).OrderByDescending(f => f.CNT).Take(100);
+            }
+            return result;
         }
 
         public async Task<IEnumerable<WikiResponse>> GetData(List<string> fileContents)
