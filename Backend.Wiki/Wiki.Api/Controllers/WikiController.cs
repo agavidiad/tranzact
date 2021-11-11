@@ -47,7 +47,7 @@ namespace Wiki.Api.Controllers
             catch (Exception ex)
             {
                 logger.LogError(ex.Message);
-                return BadRequest(new { esError=true, message = "ocrr sd"});
+                return BadRequest(new { esError=true, message = "Ocurrió un error, por favor intente nuevamente"});
             }
             return Ok(result);
         }
